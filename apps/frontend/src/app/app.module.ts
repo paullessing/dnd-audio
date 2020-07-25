@@ -23,7 +23,7 @@ import { StreamPageComponent } from './stream-page/stream-page.component';
       redirectTo: 'listen',
     }]),
     SocketIoModule.forRoot({
-      url: 'http://localhost:4200',
+      url: 'http://localhost:3333',
     }),
   ],
   providers: [],

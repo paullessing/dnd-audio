@@ -15,8 +15,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private broadcaster: string;
 
-  @WebSocketServer() server: Server;
-  private logger: Logger = new Logger('AppGateway');
+  @WebSocketServer()
+  private server: Server;
+
+  private logger: Logger = new Logger('SocketGateway');
 
   afterInit(server: Server) {
     this.logger.log('Init');
@@ -29,11 +31,14 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   @SubscribeMessage('broadcaster')
   public onBroadcaster(@ConnectedSocket() socket: Socket): void {
     this.broadcaster = socket.id;
+    this.logger.log(`new broadcaster ${this.broadcaster}`);
     socket.broadcast.emit('broadcaster');
+    socket.emit('ack', socket.id);
   }
 
   @SubscribeMessage('watcher')
   public onWatcher(@ConnectedSocket() socket: Socket): void {
+    this.logger.log(`New watcher ${JSON.stringify([this.broadcaster, socket.id])}`);
     this.server.to(this.broadcaster).emit('watcher', socket.id);
   }
 
@@ -45,16 +50,19 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   @SubscribeMessage('offer')
   public onOffer(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
+    this.logger.log(`offer: ${JSON.stringify([id, { id: socket.id, message }])}`);
     this.server.to(id).emit("offer", { id: socket.id, message });
   }
 
   @SubscribeMessage('answer')
   public onAnswer(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
+    this.logger.log(`answer: ${JSON.stringify([id, { id: socket.id, message }])}`);
     this.server.to(id).emit('answer', { id: socket.id, message });
   }
 
   @SubscribeMessage('candidate')
   public onCandidate(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
+    this.logger.log(`candidate: ${JSON.stringify([id, { id: socket.id, message }])}`);
     this.server.to(id).emit('candidate', { id: socket.id, message });
   }
 }
