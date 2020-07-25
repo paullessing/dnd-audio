@@ -1,39 +1,39 @@
 {
   "version": 1,
   "projects": {
-    "dnd-audio": {
+    "frontend": {
       "projectType": "application",
       "schematics": {
         "@nrwl/angular:component": {
           "style": "scss"
         }
       },
-      "root": "apps/dnd-audio",
-      "sourceRoot": "apps/dnd-audio/src",
+      "root": "apps/frontend",
+      "sourceRoot": "apps/frontend/src",
       "prefix": "dnd-audio",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "outputPath": "dist/apps/dnd-audio",
-            "index": "apps/dnd-audio/src/index.html",
-            "main": "apps/dnd-audio/src/main.ts",
-            "polyfills": "apps/dnd-audio/src/polyfills.ts",
-            "tsConfig": "apps/dnd-audio/tsconfig.app.json",
+            "outputPath": "dist/apps/frontend",
+            "index": "apps/frontend/src/index.html",
+            "main": "apps/frontend/src/main.ts",
+            "polyfills": "apps/frontend/src/polyfills.ts",
+            "tsConfig": "apps/frontend/tsconfig.app.json",
             "aot": true,
             "assets": [
-              "apps/dnd-audio/src/favicon.ico",
-              "apps/dnd-audio/src/assets"
+              "apps/frontend/src/favicon.ico",
+              "apps/frontend/src/assets"
             ],
-            "styles": ["apps/dnd-audio/src/styles.scss"],
+            "styles": ["apps/frontend/src/styles.scss"],
             "scripts": []
           },
           "configurations": {
             "production": {
               "fileReplacements": [
                 {
-                  "replace": "apps/dnd-audio/src/environments/environment.ts",
-                  "with": "apps/dnd-audio/src/environments/environment.prod.ts"
+                  "replace": "apps/frontend/src/environments/environment.ts",
+                  "with": "apps/frontend/src/environments/environment.prod.ts"
                 }
               ],
               "optimization": true,
@@ -62,65 +62,38 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "dnd-audio:build",
-            "proxyConfig": "apps/dnd-audio/proxy.conf.json"
+            "browserTarget": "frontend:build",
+            "proxyConfig": "apps/frontend/proxy.conf.json"
           },
           "configurations": {
             "production": {
-              "browserTarget": "dnd-audio:build:production"
+              "browserTarget": "frontend:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "dnd-audio:build"
+            "browserTarget": "frontend:build"
           }
         },
         "lint": {
           "builder": "@angular-devkit/build-angular:tslint",
           "options": {
             "tsConfig": [
-              "apps/dnd-audio/tsconfig.app.json",
-              "apps/dnd-audio/tsconfig.spec.json"
+              "apps/frontend/tsconfig.app.json",
+              "apps/frontend/tsconfig.spec.json"
             ],
-            "exclude": ["**/node_modules/**", "!apps/dnd-audio/**/*"]
+            "exclude": ["**/node_modules/**", "!apps/frontend/**/*"]
           }
         },
         "test": {
           "builder": "@nrwl/jest:jest",
           "options": {
-            "jestConfig": "apps/dnd-audio/jest.config.js",
-            "tsConfig": "apps/dnd-audio/tsconfig.spec.json",
+            "jestConfig": "apps/frontend/jest.config.js",
+            "tsConfig": "apps/frontend/tsconfig.spec.json",
             "passWithNoTests": true,
-            "setupFile": "apps/dnd-audio/src/test-setup.ts"
-          }
-        }
-      }
-    },
-    "dnd-audio-e2e": {
-      "root": "apps/dnd-audio-e2e",
-      "sourceRoot": "apps/dnd-audio-e2e/src",
-      "projectType": "application",
-      "architect": {
-        "e2e": {
-          "builder": "@nrwl/cypress:cypress",
-          "options": {
-            "cypressConfig": "apps/dnd-audio-e2e/cypress.json",
-            "tsConfig": "apps/dnd-audio-e2e/tsconfig.e2e.json",
-            "devServerTarget": "dnd-audio:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "dnd-audio:serve:production"
-            }
-          }
-        },
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": ["apps/dnd-audio-e2e/tsconfig.e2e.json"],
-            "exclude": ["**/node_modules/**", "!apps/dnd-audio-e2e/**/*"]
+            "setupFile": "apps/frontend/src/test-setup.ts"
           }
         }
       }
@@ -219,5 +192,5 @@
       "unitTestRunner": "jest"
     }
   },
-  "defaultProject": "dnd-audio"
+  "defaultProject": "frontend"
 }

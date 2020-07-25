@@ -1,5 +1,5 @@
 module.exports = {
-  name: 'dnd-audio',
+  name: 'frontend',
   preset: '../../jest.config.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   globals: {
@@ -12,7 +12,7 @@ module.exports = {
       ],
     },
   },
-  coverageDirectory: '../../coverage/apps/dnd-audio',
+  coverageDirectory: '../../coverage/apps/frontend',
   snapshotSerializers: [
     'jest-preset-angular/build/AngularNoNgAttributesSnapshotSerializer.js',
     'jest-preset-angular/build/AngularSnapshotSerializer.js',

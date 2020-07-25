@@ -22,12 +22,8 @@
     }
   },
   "projects": {
-    "dnd-audio": {
+    "frontend": {
       "tags": []
-    },
-    "dnd-audio-e2e": {
-      "tags": [],
-      "implicitDependencies": ["dnd-audio"]
     },
     "api": {
       "tags": []
