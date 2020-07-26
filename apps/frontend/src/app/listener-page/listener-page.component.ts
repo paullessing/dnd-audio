@@ -1,5 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
+import { RtcPeerFactory } from '../rtc-peer-factory.service';
+import { RtcPeer } from '../rtc-peer.service';
 
 @Component({
   selector: 'dnd-audio-listener-page',
@@ -13,7 +15,7 @@ export class ListenerPageComponent implements OnInit {
   public videoEl: ElementRef<HTMLVideoElement>;
 
   constructor(
-    private socket: Socket,
+    private rtcPeerFactory: RtcPeerFactory
   ) {
     this.id = '';
   }
@@ -21,6 +23,12 @@ export class ListenerPageComponent implements OnInit {
   public ngOnInit(): void {
     // Based on https://gabrieltanner.org/blog/webrtc-video-broadcast
 
+    const peer = this.rtcPeerFactory.createListener();
+    peer.init();
+    peer.track$.subscribe((e) => {
+      this.videoEl.nativeElement.srcObject = e.streams[0];
+      this.videoEl.nativeElement.play();
+    });
 
   //   console.log('Initialising');
   //   const peer = this.peers.create();
@@ -69,56 +77,5 @@ export class ListenerPageComponent implements OnInit {
 
   public connect(): void {
     // TODO wrap all this logic in a service
-
-    let peerConnection;
-    const config = {
-      iceServers: [
-        {
-          urls: ["stun:stun.l.google.com:19302"]
-        }
-      ]
-    };
-
-    this.socket.on("offer", ({ id, message: description }) => {
-      peerConnection = new RTCPeerConnection(config);
-      peerConnection
-        .setRemoteDescription(description)
-        .then(() => peerConnection.createAnswer())
-        .then(sdp => peerConnection.setLocalDescription(sdp))
-        .then(() => {
-          this.socket.emit("answer", { id, message: peerConnection.localDescription });
-        });
-      peerConnection.ontrack = (event) => {
-        console.log('Got a track');
-        this.videoEl.nativeElement.srcObject = event.streams[0];
-        this.videoEl.nativeElement.play();
-      };
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-          this.socket.emit("candidate", { id, message: event.candidate });
-        }
-      };
-    });
-
-    this.socket.on("candidate", ({ message: candidate }) => {
-      peerConnection
-        .addIceCandidate(new RTCIceCandidate(candidate))
-        .catch(e => console.error(e));
-    });
-
-    this.socket.emit('watcher');
-
-    this.socket.on("connect", () => {
-      this.id = 'connected'
-      this.socket.emit("watcher");
-    });
-
-    this.socket.on("broadcaster", () => {
-      this.socket.emit("watcher");
-    });
-
-    this.socket.on("disconnectPeer", () => {
-      peerConnection.close();
-    });
   }
 }

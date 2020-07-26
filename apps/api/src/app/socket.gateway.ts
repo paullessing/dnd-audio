@@ -11,7 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway()
-export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private broadcaster: string;
 
@@ -20,49 +20,46 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private logger: Logger = new Logger('SocketGateway');
 
-  afterInit(server: Server) {
-    this.logger.log('Init');
-  }
-
   handleConnection(client: Socket, ...args: any[]) {
-    this.logger.log(`Client connected: ${client.id}`);
+    this.logger.log('Client connected', client.id);
   }
 
   @SubscribeMessage('broadcaster')
   public onBroadcaster(@ConnectedSocket() socket: Socket): void {
     this.broadcaster = socket.id;
-    this.logger.log(`new broadcaster ${this.broadcaster}`);
+    this.logger.debug('New broadcaster', this.broadcaster);
     socket.broadcast.emit('broadcaster');
-    socket.emit('ack', socket.id);
   }
 
   @SubscribeMessage('watcher')
   public onWatcher(@ConnectedSocket() socket: Socket): void {
-    this.logger.log(`New watcher ${JSON.stringify([this.broadcaster, socket.id])}`);
+    this.logger.debug('New watcher', JSON.stringify([this.broadcaster, socket.id]));
     this.server.to(this.broadcaster).emit('watcher', socket.id);
   }
 
   @SubscribeMessage('disconnect')
-  handleDisconnect(@ConnectedSocket() client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+  public handleDisconnect(@ConnectedSocket() client: Socket) {
+    this.logger.debug('Client disconnected', client.id);
     this.server.to(this.broadcaster).emit('disconnectPeer', client.id);
   }
 
   @SubscribeMessage('offer')
-  public onOffer(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
-    this.logger.log(`offer: ${JSON.stringify([id, { id: socket.id, message }])}`);
-    this.server.to(id).emit("offer", { id: socket.id, message });
+  public onOffer(@MessageBody() { id, description }: any, @ConnectedSocket() socket: Socket) {
+    this.logger.verbose('Offer made', JSON.stringify([id, { id: socket.id, description }]));
+    this.server.to(id).emit('offer', { id: socket.id, description });
   }
 
   @SubscribeMessage('answer')
-  public onAnswer(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
-    this.logger.log(`answer: ${JSON.stringify([id, { id: socket.id, message }])}`);
-    this.server.to(id).emit('answer', { id: socket.id, message });
+  public onAnswer(@MessageBody() { id, description }: any, @ConnectedSocket() socket: Socket) {
+    this.logger.verbose('Answer', JSON.stringify([id, { id: socket.id, description }]));
+    this.server.to(id).emit('answer', { id: socket.id, description });
   }
 
   @SubscribeMessage('candidate')
-  public onCandidate(@MessageBody() { id, message }: any, @ConnectedSocket() socket: Socket) {
-    this.logger.log(`candidate: ${JSON.stringify([id, { id: socket.id, message }])}`);
-    this.server.to(id).emit('candidate', { id: socket.id, message });
+  public onCandidate(@MessageBody() { peerId, candidate }: any, @ConnectedSocket() socket: Socket) {
+    // Either end can generate candidates.
+    // When we receive one, pass it on to the peer but reverse the `peerId` property so they know where it's from
+    this.logger.verbose('Candidate', JSON.stringify([socket.id, { peerId, candidate }]));
+    this.server.to(peerId).emit('candidate', { peerId: socket.id, candidate });
   }
 }
