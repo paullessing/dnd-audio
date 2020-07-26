@@ -1,31 +1,30 @@
-import { MediaCollection, Message } from '@dnd-audio/api-interfaces';
+import { MediaCollection } from '@dnd-audio/api-interfaces';
 import { Controller, Get, Param, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { ReadStream } from 'fs';
-import { AppService } from './app.service';
+import { MediaService } from './media.service';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService
+    private readonly mediaService: MediaService
   ) {}
-
-  @Get('hello')
-  getData(): Message {
-    return { message: __dirname + '\\' + __filename };
-  }
 
   @Get('media/list')
   public getMediaList(): Promise<MediaCollection> {
-    return this.appService.getMediaCollection();
+    return this.mediaService.getMediaCollection();
   }
 
-  @Get('media/:filename')
+  @Get('media/scan') // TODO this should be a POST if not automatic
+  public async scan(): Promise<MediaCollection> {
+    return this.mediaService.scan();
+  }
+
+  @Get('media/stream/:filename')
   public async getFile(
     @Param('filename') fileName: string,
     @Res() res: Response
   ): Promise<void> {
-    const { stream, size } = await this.appService.streamFile(fileName);
+    const { stream, size } = await this.mediaService.streamFile(fileName);
 
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Content-Length', size);

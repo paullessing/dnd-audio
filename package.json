@@ -45,6 +45,8 @@
     "@nestjs/websockets": "^7.3.2",
     "@nrwl/angular": "10.0.6",
     "fs-extra": "^9.0.1",
+    "music-metadata": "^7.0.0",
+    "nedb-promises": "^4.0.4",
     "ngx-socket-io": "^3.2.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~6.6.0",

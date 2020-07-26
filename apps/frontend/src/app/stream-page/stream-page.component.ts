@@ -73,7 +73,7 @@ export class StreamPageComponent implements OnInit, OnDestroy {
   }
 
   public play(track: string): void {
-    const fileUrl = '/api/media/' + track;
+    const fileUrl = '/api/media/stream/' + track;
     if (this.audio && this.audio.src === fileUrl) {
       return;
     }
