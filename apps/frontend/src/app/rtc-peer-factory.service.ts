@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
-import { RtcPeer } from './rtc-peer.service';
+import { RtcBroadcasterPeer } from './rtc-broadcaster-peer';
+import { RtcListenerPeer } from './rtc-listener-peer';
 
 export const rtcConfig = {
   iceServers: [
@@ -20,8 +21,14 @@ export class RtcPeerFactory {
   ) {}
 
   public createListener() {
-    return new RtcPeer(new Socket({
+    return new RtcListenerPeer(new Socket({
       url: 'http://localhost:3333',
     }), this.zone, rtcConfig);
+  }
+
+  public createBroadcaster() {
+    return new RtcBroadcasterPeer(new Socket({
+      url: 'http://localhost:3333'
+    }), rtcConfig);
   }
 }

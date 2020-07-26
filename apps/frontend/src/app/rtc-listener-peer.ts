@@ -2,7 +2,7 @@ import { NgZone } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import { Observable, Subject } from 'rxjs';
 
-export class RtcPeer {
+export class RtcListenerPeer {
   /*
    1. The caller captures local Media via navigator.mediaDevices.getUserMedia()
    2. The caller creates RTCPeerConnection and called RTCPeerConnection.addTrack() (Since addStream is deprecating)
@@ -19,6 +19,8 @@ export class RtcPeer {
   13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call. It now knows the configuration of both peers. Media begins to flow as configured.
    */
 
+  private peerConnection: RTCPeerConnection;
+
   constructor(
     private socket: Socket,
     private zone: NgZone,
@@ -32,24 +34,17 @@ export class RtcPeer {
   private trackSubject: Subject<RTCTrackEvent> = new Subject();
 
   public init(): void {
+    // Based on https://gabrieltanner.org/blog/webrtc-video-broadcast
     this.zone.runOutsideAngular(() => {
-      let peerConnection;
-
       this.socket.on('offer', ({ id: remoteId, description }) => {
-        peerConnection = this.setupPeerConnection(remoteId, description);
+        this.peerConnection = this.setupPeerConnection(remoteId, description);
       });
 
       this.socket.on('candidate', ({ candidate }) => {
-        peerConnection
+        this.peerConnection
           .addIceCandidate(new RTCIceCandidate(candidate))
           .catch(e => console.error(e));
       });
-
-
-      this.socket.on('disconnectPeer', () => {
-        peerConnection.close();
-      });
-
 
       // Initialise this client by announcing it as a watcher
       this.socket.emit('watcher');
@@ -99,5 +94,11 @@ export class RtcPeer {
     };
 
     return peerConnection;
+  }
+
+  public destroy(): void {
+    this.peerConnection.close();
+    this.socket.emit('disconnect');
+    this.socket.disconnect();
   }
 }
