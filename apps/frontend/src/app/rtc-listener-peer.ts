@@ -77,6 +77,7 @@ export class RtcListenerPeer {
       .then(() => {
         // 11. The recipient uses the signaling server to send the answer to the caller.
         this.socket.emit('answer', { id: broadcasterId, description: peerConnection.localDescription });
+        console.log('Initialised connection to broadcast', broadcasterId);
       });
 
     // Connection has been initialised, we've received a track

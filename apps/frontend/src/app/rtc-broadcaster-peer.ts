@@ -39,6 +39,7 @@ export class RtcBroadcasterPeer {
       //      It now knows the configuration of both peers.
       //      Media begins to flow as configured.
       this.peerConnections.get(id).setRemoteDescription(description);
+      console.info('Initialised peer connection', id);
     });
 
     this.socket.on('candidate', ({ peerId, candidate }) => {

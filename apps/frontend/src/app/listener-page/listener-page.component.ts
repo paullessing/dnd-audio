@@ -4,14 +4,16 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 
 @Component({
   selector: 'dnd-audio-listener-page',
-  template: `Connection ID: {{ id }}<br><video #video muted></video>`,
+  template: `Connection ID: {{ id }}<br>
+  <audio #media></audio>
+  <button (click)="init()">Init</button>`,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
 
   public id: string;
 
-  @ViewChild('video')
-  public videoEl: ElementRef<HTMLVideoElement>;
+  @ViewChild('media')
+  public mediaEl: ElementRef<HTMLMediaElement>;
 
   private peer: RtcListenerPeer;
 
@@ -22,12 +24,18 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
+  }
+
+  public init(): void {
     this.peer = this.rtcPeerFactory.createListener();
     this.peer.init();
     this.peer.track$.subscribe((e) => {
-      this.videoEl.nativeElement.srcObject = e.streams[0];
-      this.videoEl.nativeElement.play();
+      console.log('Got a track');
+      this.mediaEl.nativeElement.srcObject = e.streams[0];
+      this.mediaEl.nativeElement.play();
+      this.id = 'Playing';
     });
+    this.id = 'Initialised';
   }
 
   public ngOnDestroy(): void {
