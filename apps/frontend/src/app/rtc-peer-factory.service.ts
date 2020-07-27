@@ -29,6 +29,6 @@ export class RtcPeerFactory {
   public createBroadcaster() {
     return new RtcBroadcasterPeer(new Socket({
       url: 'http://localhost:3333'
-    }), rtcConfig);
+    }), this.zone, rtcConfig);
   }
 }

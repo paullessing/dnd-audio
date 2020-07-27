@@ -1,3 +1,4 @@
+import { NgZone } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 
 export class RtcBroadcasterPeer {
@@ -22,38 +23,45 @@ export class RtcBroadcasterPeer {
 
   constructor(
     private socket: Socket,
+    private zone: NgZone,
     private config: RTCConfiguration,
   ) {
     this.peerConnections = new Map();
   }
 
   public init(stream: MediaStream): void {
-    this.stream = stream;
-    this.socket.emit('broadcaster'); // Register self as the only broadcaster
+    this.zone.runOutsideAngular(() => {
+      this.stream = stream;
+      this.socket.emit('broadcaster'); // Register self as the only broadcaster
 
-    this.socket.on('watcher', (watcherId) => this.addWatcher(watcherId));
+      this.socket.on('watcher', (watcherId) => this.addWatcher(watcherId));
 
-    this.socket.on('answer', ({ id, description }) => {
-      // 12. The caller receives the answer.
-      // 13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call.
-      //      It now knows the configuration of both peers.
-      //      Media begins to flow as configured.
-      this.peerConnections.get(id).setRemoteDescription(description);
-      console.info('Initialised peer connection', id);
-    });
+      this.socket.on('answerFromWatcher', (watcherId, description) => {
+        // 12. The caller receives the answer.
+        // 13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call.
+        //      It now knows the configuration of both peers.
+        //      Media begins to flow as configured.
+        this.peerConnections.get(watcherId).setRemoteDescription(description);
+        console.info('Initialised peer connection', watcherId);
+      });
 
-    this.socket.on('candidate', ({ peerId, candidate }) => {
-      this.peerConnections.get(peerId).addIceCandidate(new RTCIceCandidate(candidate));
-    });
+      this.socket.on('candidate', (watcherId, candidate) => {
+        this.peerConnections.get(watcherId).addIceCandidate(new RTCIceCandidate(candidate));
+      });
 
-    this.socket.on('disconnectPeer', (peerId) => {
-      this.peerConnections[peerId].close();
-      this.peerConnections.delete(peerId);
+      // this.socket.on('disconnectPeer', (peerId) => {
+      //   this.peerConnections[peerId].close();
+      //   this.peerConnections.delete(peerId);
+      // });
     });
   }
 
   private addWatcher(watcherId: string) {
     console.log('New watcher', watcherId);
+
+    if (this.peerConnections.has(watcherId)) {
+      this.peerConnections.get(watcherId).close();
+    }
 
     // 2. The caller creates RTCPeerConnection and called RTCPeerConnection.addTrack()
     const peerConnection = new RTCPeerConnection(this.config);
@@ -64,7 +72,8 @@ export class RtcBroadcasterPeer {
     // 5. After setLocalDescription(), the caller asks STUN servers to generate the ice candidates
     peerConnection.onicecandidate = ({ candidate }) => {
       if (candidate) {
-        this.socket.emit('candidate', { peerId: watcherId, candidate });
+        console.log('Candidate', watcherId, candidate);
+        this.socket.emit('candidate', watcherId, candidate);
       }
     };
 
@@ -76,7 +85,7 @@ export class RtcBroadcasterPeer {
       // 5. See above, configured as a callback
       .then(() => {
         // 6. The caller uses the signaling server to transmit the offer to the intended receiver of the call.
-        this.socket.emit('offer', { id: watcherId, description: peerConnection.localDescription });
+        this.socket.emit('offerToWatcher', watcherId, peerConnection.localDescription);
       });
   }
 
@@ -85,7 +94,7 @@ export class RtcBroadcasterPeer {
       connection.close();
     }
 
-    this.socket.emit('disconnect');
+    this.socket.emit('broadcast_disconnect');
     this.socket.disconnect();
   }
 }

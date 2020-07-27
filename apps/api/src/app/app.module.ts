@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 
 import { AppController } from './app.controller';
 import { MediaService } from './media.service';
-import { TrackDatabase } from './db.service';
-import { SocketGateway } from './socket.gateway';
+import { TrackDatabase } from './track-database.service';
+import { BroadcastConnectGateway } from './broadcastConnectGateway';
 
 @Module({
   imports: [],
   controllers: [AppController],
-  providers: [MediaService, SocketGateway, TrackDatabase],
+  providers: [MediaService, BroadcastConnectGateway, TrackDatabase],
 })
 export class AppModule {}

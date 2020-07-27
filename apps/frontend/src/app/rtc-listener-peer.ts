@@ -36,11 +36,12 @@ export class RtcListenerPeer {
   public init(): void {
     // Based on https://gabrieltanner.org/blog/webrtc-video-broadcast
     this.zone.runOutsideAngular(() => {
-      this.socket.on('offer', ({ id: remoteId, description }) => {
-        this.peerConnection = this.setupPeerConnection(remoteId, description);
+      this.socket.on('offerFromBroadcaster', (broadcasterId, description) => {
+        console.log('Got an offer', broadcasterId);
+        this.peerConnection = this.setupPeerConnection(broadcasterId, description);
       });
 
-      this.socket.on('candidate', ({ candidate }) => {
+      this.socket.on('candidate', (broadcasterId, candidate) => {
         this.peerConnection
           .addIceCandidate(new RTCIceCandidate(candidate))
           .catch(e => console.error(e));
@@ -76,9 +77,15 @@ export class RtcListenerPeer {
       .then(sdp => peerConnection.setLocalDescription(sdp))
       .then(() => {
         // 11. The recipient uses the signaling server to send the answer to the caller.
-        this.socket.emit('answer', { id: broadcasterId, description: peerConnection.localDescription });
+        this.socket.emit('answerToBroadcaster', broadcasterId, peerConnection.localDescription);
         console.log('Initialised connection to broadcast', broadcasterId);
       });
+
+    peerConnection.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        this.socket.emit('candidate', broadcasterId, candidate);
+      }
+    };
 
     // Connection has been initialised, we've received a track
     peerConnection.ontrack = (event) => {
@@ -86,12 +93,6 @@ export class RtcListenerPeer {
         console.log('Got a track');
         this.trackSubject.next(event);
       });
-    };
-
-    peerConnection.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        this.socket.emit('candidate', { peerId: broadcasterId, candidate });
-      }
     };
 
     return peerConnection;

@@ -6,7 +6,7 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
   selector: 'dnd-audio-listener-page',
   template: `Connection ID: {{ id }}<br>
   <audio #media></audio>
-  <button (click)="init()">Init</button>`,
+  <button>Play</button>`,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
 
@@ -24,6 +24,7 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
+    this.init();
   }
 
   public init(): void {
