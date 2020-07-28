@@ -10,7 +10,10 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
   template: `Listeners: {{ this.peer ? (this.peer.listeners$ | async) : 0 }}<br>
   <button (click)="togglePlay()">{{ isPlaying ? 'Pause' : 'Play' }}</button>
   <ul *ngIf="(media$ | async) as media">
-    <li *ngFor="let track of media.tracks"><a (click)="playTrack(track.filename)" href="javascript:void(0)">{{ track.filename }}</a></li>
+    <li *ngFor="let track of media.tracks"><div (click)="playTrack(track.filename)">
+      <img *ngIf="(track.metadata.common.picture ||[])[0]; let picture" [src]="'data:' + picture.format + ';base64,' + picture.data" width="50" height="50"/>
+      {{ track.metadata.common.title }}
+    </div></li>
   </ul>`,
 })
 export class StreamPageComponent implements OnInit, OnDestroy {
