@@ -31,7 +31,7 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
     this.peer = this.rtcPeerFactory.createListener();
     this.peer.init();
     this.peer.track$.subscribe((e) => {
-      console.log('Got a track');
+      console.log('Listener page: Got a track');
       this.mediaEl.nativeElement.srcObject = e.streams[0];
       this.mediaEl.nativeElement.play();
       this.id = 'Playing';

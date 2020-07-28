@@ -1,5 +1,6 @@
 import { NgZone } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 export class RtcBroadcasterPeer {
   /*
@@ -18,8 +19,13 @@ export class RtcBroadcasterPeer {
   13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call. It now knows the configuration of both peers. Media begins to flow as configured.
    */
 
+  public get listeners$(): Observable<number> {
+    return this.listenersSubject.asObservable();
+  }
+
   private stream: MediaStream;
   private peerConnections: Map<string, RTCPeerConnection>;
+  private listenersSubject: Subject<number> = new BehaviorSubject(0);
 
   constructor(
     private socket: Socket,
@@ -87,7 +93,7 @@ export class RtcBroadcasterPeer {
     // 5. After setLocalDescription(), the caller asks STUN servers to generate the ice candidates
     peerConnection.onicecandidate = ({ candidate }: RTCPeerConnectionIceEvent) => {
       if (candidate) {
-        console.info('Candidate', listenerId, candidate);
+        // console.info('Candidate', listenerId, candidate);
         this.socket.emit('candidate', listenerId, candidate);
       }
     };
@@ -106,6 +112,10 @@ export class RtcBroadcasterPeer {
     //      Media begins to flow as configured.
     this.peerConnections.get(listenerId).setRemoteDescription(description);
     console.info('Initialised peer connection', listenerId);
+
+    this.zone.run(() => {
+      this.listenersSubject.next(this.peerConnections.size);
+    });
   }
 
   private removeDisconnectedPeer(peerId: string): void {
