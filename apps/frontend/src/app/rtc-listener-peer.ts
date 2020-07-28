@@ -25,7 +25,12 @@ export class RtcListenerPeer {
     private socket: Socket,
     private zone: NgZone,
     private config: RTCConfiguration,
-  ) {}
+  ) {
+    this.setupPeerConnection = this.setupPeerConnection.bind(this);
+    this.onTrack = this.onTrack.bind(this);
+    this.onCandidate = this.onCandidate.bind(this);
+    this.closePeerConnection = this.closePeerConnection.bind(this);
+  }
 
   public get track$(): Observable<RTCTrackEvent> {
     return this.trackSubject.asObservable();
@@ -36,71 +41,91 @@ export class RtcListenerPeer {
   public init(): void {
     // Based on https://gabrieltanner.org/blog/webrtc-video-broadcast
     this.zone.runOutsideAngular(() => {
-      this.socket.on('offerFromBroadcaster', (broadcasterId, description) => {
-        console.log('Got an offer', broadcasterId);
-        this.peerConnection = this.setupPeerConnection(broadcasterId, description);
-      });
+      this.socket.on('offerFromBroadcaster', this.setupPeerConnection);
 
-      this.socket.on('candidate', (broadcasterId, candidate) => {
-        this.peerConnection
-          .addIceCandidate(new RTCIceCandidate(candidate))
-          .catch(e => console.error(e));
-      });
+      this.socket.on('candidate', this.onCandidate);
 
-      // Initialise this client by announcing it as a watcher
-      this.socket.emit('watcher');
+      this.socket.on('broadcastDisconnected', this.closePeerConnection);
 
-      // Emit on socket start
-      this.socket.on('connect', () => {
-        console.log('Emitting watch on connect');
-        this.socket.emit('watcher');
-      });
+      // Initialise this client by announcing it as a listener
+      this.socket.emit('listener');
 
       // Emit when the broadcaster changes
-      this.socket.on('broadcaster', () => {
-        console.log('Emitting watch on broadcast');
-        this.socket.emit('watcher');
+      this.socket.on('broadcaster', (broadcasterId) => {
+        this.closePeerConnection();
+
+        console.log('New broadcaster announced, declaring self as a listener');
+        this.socket.emit('listener');
       });
     })
   }
 
-  private setupPeerConnection(broadcasterId: string, description: RTCSessionDescriptionInit): RTCPeerConnection {
-    const peerConnection = new RTCPeerConnection(this.config);
-    // 7. The recipient receives the offer and calls RTCPeerConnection.setRemoteDescription() to record it as the remote description
-    peerConnection
-      .setRemoteDescription(description)
-      // 8. The recipient does any setup it needs to do for its end of the call (none because we're only listening)
-      // 9. The recipient then creates an answer by calling RTCPeerConnection.createAnswer().
-      .then(() => peerConnection.createAnswer())
-      // 10. The recipient calls RTCPeerConnection.setLocalDescription(), passing in the created answer, to set the answer as its local description.
-      //      The recipient now knows the configuration of both ends of the connection.
-      .then(sdp => peerConnection.setLocalDescription(sdp))
-      .then(() => {
-        // 11. The recipient uses the signaling server to send the answer to the caller.
-        this.socket.emit('answerToBroadcaster', broadcasterId, peerConnection.localDescription);
-        console.log('Initialised connection to broadcast', broadcasterId);
-      });
+  public destroy(): void {
+    if (this.peerConnection) {
+      this.peerConnection.close();
+    }
+    this.socket.emit('disconnect');
+    this.socket.disconnect();
+  }
 
-    peerConnection.onicecandidate = ({ candidate }) => {
+  private async setupPeerConnection(broadcasterId: string, description: RTCSessionDescriptionInit): Promise<void> {
+    const peerConnection = this.createPeerConnection();
+
+    // 7. The recipient receives the offer and calls RTCPeerConnection.setRemoteDescription() to record it as the remote description
+    await peerConnection.setRemoteDescription(description)
+
+    // 8. The recipient does any setup it needs to do for its end of the call (none because we're only listening)
+    // 9. The recipient then creates an answer by calling RTCPeerConnection.createAnswer().
+    const sessionDescription = await peerConnection.createAnswer();
+
+    // 10. The recipient calls RTCPeerConnection.setLocalDescription(), passing in the created answer, to set the answer as its local description.
+    //     The recipient now knows the configuration of both ends of the connection.
+    await peerConnection.setLocalDescription(sessionDescription);
+
+    // 11. The recipient uses the signaling server to send the answer to the caller.
+    this.socket.emit('answerToBroadcaster', broadcasterId, peerConnection.localDescription);
+    console.log('Initialised connection to broadcast', broadcasterId);
+
+    peerConnection.onicecandidate = ({ candidate }: RTCPeerConnectionIceEvent) => {
       if (candidate) {
         this.socket.emit('candidate', broadcasterId, candidate);
       }
     };
-
-    // Connection has been initialised, we've received a track
-    peerConnection.ontrack = (event) => {
-      this.zone.run(() => {
-        console.log('Got a track');
-        this.trackSubject.next(event);
-      });
-    };
-
-    return peerConnection;
   }
 
-  public destroy(): void {
+  private createPeerConnection(): RTCPeerConnection {
+    if (this.peerConnection) {
+      this.peerConnection.close();
+    }
+
+    this.peerConnection = new RTCPeerConnection(this.config);
+    this.peerConnection.ontrack = this.onTrack;
+
+    return this.peerConnection;
+  }
+
+  private onCandidate(broadcasterId: string, candidate: RTCIceCandidate): void {
+    if (!this.peerConnection) {
+      return;
+    }
+
+    this.peerConnection
+      .addIceCandidate(new RTCIceCandidate(candidate))
+      .catch(e => console.error(e));
+  }
+
+  private onTrack(event: RTCTrackEvent): void {
+    this.zone.run(() => {
+      console.log('Got a track');
+      this.trackSubject.next(event);
+    });
+  }
+
+  private closePeerConnection(): void {
+    if (!this.peerConnection) {
+      return;
+    }
     this.peerConnection.close();
-    this.socket.emit('disconnect');
-    this.socket.disconnect();
+    this.peerConnection = null;
   }
 }

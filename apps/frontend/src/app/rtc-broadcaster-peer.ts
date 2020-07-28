@@ -27,6 +27,11 @@ export class RtcBroadcasterPeer {
     private config: RTCConfiguration,
   ) {
     this.peerConnections = new Map();
+
+    this.addIceCandidate = this.addIceCandidate.bind(this);
+    this.addListener = this.addListener.bind(this);
+    this.processAnswer = this.processAnswer.bind(this);
+    this.removeDisconnectedPeer = this.removeDisconnectedPeer.bind(this);
   }
 
   public init(stream: MediaStream): void {
@@ -34,59 +39,12 @@ export class RtcBroadcasterPeer {
       this.stream = stream;
       this.socket.emit('broadcaster'); // Register self as the only broadcaster
 
-      this.socket.on('watcher', (watcherId) => this.addWatcher(watcherId));
-
-      this.socket.on('answerFromWatcher', (watcherId, description) => {
-        // 12. The caller receives the answer.
-        // 13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call.
-        //      It now knows the configuration of both peers.
-        //      Media begins to flow as configured.
-        this.peerConnections.get(watcherId).setRemoteDescription(description);
-        console.info('Initialised peer connection', watcherId);
-      });
-
-      this.socket.on('candidate', (watcherId, candidate) => {
-        this.peerConnections.get(watcherId).addIceCandidate(new RTCIceCandidate(candidate));
-      });
-
-      // this.socket.on('disconnectPeer', (peerId) => {
-      //   this.peerConnections[peerId].close();
-      //   this.peerConnections.delete(peerId);
-      // });
+      this.socket.on('listener', this.addListener);
+      // 12. The caller receives the answer.
+      this.socket.on('answerFromListener', this.processAnswer);
+      this.socket.on('candidate', this.addIceCandidate);
+      this.socket.on('disconnectPeer', this.removeDisconnectedPeer);
     });
-  }
-
-  private addWatcher(watcherId: string) {
-    console.log('New watcher', watcherId);
-
-    if (this.peerConnections.has(watcherId)) {
-      this.peerConnections.get(watcherId).close();
-    }
-
-    // 2. The caller creates RTCPeerConnection and called RTCPeerConnection.addTrack()
-    const peerConnection = new RTCPeerConnection(this.config);
-    this.peerConnections.set(watcherId, peerConnection);
-
-    this.stream.getTracks().forEach(track => peerConnection.addTrack(track, this.stream));
-
-    // 5. After setLocalDescription(), the caller asks STUN servers to generate the ice candidates
-    peerConnection.onicecandidate = ({ candidate }) => {
-      if (candidate) {
-        console.log('Candidate', watcherId, candidate);
-        this.socket.emit('candidate', watcherId, candidate);
-      }
-    };
-
-    // 3. The caller calls RTCPeerConnection.createOffer() to create an offer.
-    peerConnection
-      .createOffer()
-      // 4. The caller calls RTCPeerConnection.setLocalDescription() to set that offer as the local description
-      .then(sdp => peerConnection.setLocalDescription(sdp))
-      // 5. See above, configured as a callback
-      .then(() => {
-        // 6. The caller uses the signaling server to transmit the offer to the intended receiver of the call.
-        this.socket.emit('offerToWatcher', watcherId, peerConnection.localDescription);
-      });
   }
 
   public destroy(): void {
@@ -94,7 +52,66 @@ export class RtcBroadcasterPeer {
       connection.close();
     }
 
-    this.socket.emit('broadcast_disconnect');
     this.socket.disconnect();
+  }
+
+  private addIceCandidate(listenerId: string, candidate: RTCIceCandidate): void {
+    if (!this.peerConnections.has(listenerId)) {
+      return;
+    }
+    this.peerConnections.get(listenerId).addIceCandidate(new RTCIceCandidate(candidate));
+  }
+
+  private async addListener(listenerId: string) {
+    console.info('New listener', listenerId);
+
+    if (this.peerConnections.has(listenerId)) {
+      this.peerConnections.get(listenerId).close();
+    }
+
+    // 2. The caller creates RTCPeerConnection and called RTCPeerConnection.addTrack()
+    const peerConnection = new RTCPeerConnection(this.config);
+    this.peerConnections.set(listenerId, peerConnection);
+
+    this.stream.getTracks().forEach(track => {
+      console.log('Adding track');
+      peerConnection.addTrack(track, this.stream)
+    });
+
+    // 3. The caller calls RTCPeerConnection.createOffer() to create an offer.
+    const sessionDescription = await peerConnection.createOffer();
+
+    // 4. The caller calls RTCPeerConnection.setLocalDescription() to set that offer as the local description
+    await peerConnection.setLocalDescription(sessionDescription);
+
+    // 5. After setLocalDescription(), the caller asks STUN servers to generate the ice candidates
+    peerConnection.onicecandidate = ({ candidate }: RTCPeerConnectionIceEvent) => {
+      if (candidate) {
+        console.info('Candidate', listenerId, candidate);
+        this.socket.emit('candidate', listenerId, candidate);
+      }
+    };
+
+    // 6. The caller uses the signaling server to transmit the offer to the intended receiver of the call.
+    this.socket.emit('offerToListener', listenerId, peerConnection.localDescription);
+  }
+
+  private processAnswer(listenerId, description): void {
+    if (!this.peerConnections.has(listenerId)) {
+      return;
+    }
+
+    // 13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call.
+    //      It now knows the configuration of both peers.
+    //      Media begins to flow as configured.
+    this.peerConnections.get(listenerId).setRemoteDescription(description);
+    console.info('Initialised peer connection', listenerId);
+  }
+
+  private removeDisconnectedPeer(peerId: string): void {
+    if (this.peerConnections.has(peerId)) {
+      this.peerConnections.get(peerId).close();
+      this.peerConnections.delete(peerId);
+    }
   }
 }
