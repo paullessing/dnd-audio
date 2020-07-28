@@ -83,6 +83,7 @@ export class RtcListenerPeer {
     await peerConnection.setLocalDescription(sessionDescription);
 
     // 11. The recipient uses the signaling server to send the answer to the caller.
+    console.log('Responding to broadcast', broadcasterId);
     this.socket.emit('answerToBroadcaster', broadcasterId, peerConnection.localDescription);
     console.log('Initialised connection to broadcast', broadcasterId);
 

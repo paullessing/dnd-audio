@@ -54,8 +54,8 @@ export class RtcBroadcasterPeer {
   }
 
   public destroy(): void {
-    for (const connection of this.peerConnections.values()) {
-      connection.close();
+    for (const peerConnection of this.peerConnections.values()) {
+      peerConnection.close();
     }
 
     this.socket.disconnect();
@@ -72,16 +72,17 @@ export class RtcBroadcasterPeer {
     console.info('New listener', listenerId);
 
     if (this.peerConnections.has(listenerId)) {
-      this.peerConnections.get(listenerId).close();
+      return;
+      // this.peerConnections.get(listenerId).connection.close();
     }
 
     // 2. The caller creates RTCPeerConnection and called RTCPeerConnection.addTrack()
     const peerConnection = new RTCPeerConnection(this.config);
     this.peerConnections.set(listenerId, peerConnection);
 
-    this.stream.getTracks().forEach(track => {
+    this.stream.getTracks().forEach((track) => {
       console.log('Adding track');
-      peerConnection.addTrack(track, this.stream)
+      peerConnection.addTrack(track, this.stream);
     });
 
     // 3. The caller calls RTCPeerConnection.createOffer() to create an offer.
@@ -110,7 +111,8 @@ export class RtcBroadcasterPeer {
     // 13. The caller calls RTCPeerConnection.setRemoteDescription() to set the answer as the remote description for its end of the call.
     //      It now knows the configuration of both peers.
     //      Media begins to flow as configured.
-    this.peerConnections.get(listenerId).setRemoteDescription(description);
+    const peerConnection = this.peerConnections.get(listenerId);
+    peerConnection.setRemoteDescription(description);
     console.info('Initialised peer connection', listenerId);
 
     this.zone.run(() => {

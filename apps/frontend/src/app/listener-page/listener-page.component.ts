@@ -1,19 +1,15 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { RtcListenerPeer } from '../rtc-listener-peer';
 import { RtcPeerFactory } from '../rtc-peer-factory.service';
 
 @Component({
   selector: 'dnd-audio-listener-page',
   template: `Connection ID: {{ id }}<br>
-  <audio #media></audio>
-  <button>Play</button>`,
+  <button>I am playing, promise</button>`,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
 
   public id: string;
-
-  @ViewChild('media')
-  public mediaEl: ElementRef<HTMLMediaElement>;
 
   private peer: RtcListenerPeer;
 
@@ -24,22 +20,38 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
   }
 
   public ngOnInit(): void {
-    this.init();
-  }
+    const audio = new AudioContext();
 
-  public init(): void {
     this.peer = this.rtcPeerFactory.createListener();
     this.peer.init();
     this.peer.track$.subscribe((e) => {
-      console.log('Listener page: Got a track');
-      this.mediaEl.nativeElement.srcObject = e.streams[0];
-      this.mediaEl.nativeElement.play();
-      this.id = 'Playing';
+
+      e.streams.forEach((stream) => {
+        console.log('Listener page: Connected a track');
+
+        this.initialiseStream(stream);
+
+        const src = audio.createMediaStreamSource(stream);
+        src.connect(audio.destination);
+      });
     });
-    this.id = 'Initialised';
   }
 
   public ngOnDestroy(): void {
     this.peer.destroy();
+  }
+
+  /**
+   * Initialise a muted Audio element to trigger the page pulling the source data.
+   * Without this, the AudioContext stays silent
+   * @see https://stackoverflow.com/a/55644983
+   */
+  private initialiseStream(stream: MediaStream): void {
+    let audio = new Audio();
+    audio.muted = true;
+    audio.srcObject = stream;
+    audio.addEventListener('canplaythrough', () => {
+      audio = null;
+    });
   }
 }
