@@ -1,26 +1,39 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { RtcListenerPeer } from '../rtc-listener-peer';
 import { RtcPeerFactory } from '../rtc-peer-factory.service';
 
 @Component({
   selector: 'dnd-audio-listener-page',
-  template: `Connection ID: {{ id }}<br>
-  <button>I am playing, promise</button>`,
+  template: `<dnd-audio-visualizer *ngIf="analyserNode" [analyserNode]="analyserNode"></dnd-audio-visualizer><br>
+  <button>I am playing, promise</button><br>
+  <input #volumeElt type="range" min="0" max="200" value="100" step="1" (input)="setVolume(volumeElt.value)"> {{ volume }}`,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
 
-  public id: string;
+  @ViewChild('canvas')
+  public canvasRef: ElementRef;
+
+  public analyserNode: AnalyserNode;
+
+  public volume = 100;
+
+  private gainNode: GainNode;
 
   private peer: RtcListenerPeer;
 
   constructor(
-    private rtcPeerFactory: RtcPeerFactory
+    private rtcPeerFactory: RtcPeerFactory,
   ) {
-    this.id = '';
   }
 
   public ngOnInit(): void {
     const audio = new AudioContext();
+
+    this.analyserNode = audio.createAnalyser();
+    this.gainNode = audio.createGain();
+    this.setVolume(100);
+
+    this.analyserNode.connect(this.gainNode).connect(audio.destination);
 
     this.peer = this.rtcPeerFactory.createListener();
     this.peer.init();
@@ -32,13 +45,21 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
         this.initialiseStream(stream);
 
         const src = audio.createMediaStreamSource(stream);
-        src.connect(audio.destination);
+        src.connect(this.analyserNode);
       });
     });
   }
 
   public ngOnDestroy(): void {
     this.peer.destroy();
+  }
+
+  public setVolume(volume: number | string): void {
+    this.volume = +volume;
+    const gain = this.volume / 100;
+    // For volume changing, gain can go from 0 (silent) to 1 (normal) or 2 (louder).
+    // If gain is negative, it will invert the frequency values.
+    this.gainNode.gain.value = gain;
   }
 
   /**

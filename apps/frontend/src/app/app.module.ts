@@ -5,9 +5,15 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { ListenerPageComponent } from './listener-page/listener-page.component';
 import { StreamPageComponent } from './stream-page/stream-page.component';
+import { VisualizerComponent } from './visualizer/visualizer.component';
 
 @NgModule({
-  declarations: [AppComponent, ListenerPageComponent, StreamPageComponent],
+  declarations: [
+    AppComponent,
+    ListenerPageComponent,
+    StreamPageComponent,
+    VisualizerComponent,
+  ],
   imports: [
     BrowserModule,
     HttpClientModule,
