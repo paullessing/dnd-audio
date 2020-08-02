@@ -12,7 +12,7 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
   <ul *ngIf="(media$ | async) as media">
     <li *ngFor="let track of media.tracks"><div (click)="playTrack(track.filename)">
       <img *ngIf="(track.metadata.common.picture ||[])[0]; let picture" [src]="'data:' + picture.format + ';base64,' + picture.data" width="50" height="50"/>
-      {{ track.metadata.common.title }}
+      {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
     </div></li>
   </ul>`,
 })
