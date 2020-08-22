@@ -7,13 +7,19 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 
 @Component({
   selector: 'dnd-audio-stream-page',
-  template: `Listeners: {{ this.peer ? (this.peer.listeners$ | async) : 0 }}<br>
+  template: `Listeners: {{ this.peer ? this.peer.listenerCount : 0 }}<br>
   <button (click)="togglePlay()">{{ isPlaying ? 'Pause' : 'Play' }}</button>
   <ul *ngIf="(media$ | async) as media">
-    <li *ngFor="let track of media.tracks"><div (click)="playTrack(track.filename)">
-      <img *ngIf="(track.metadata.common.picture ||[])[0]; let picture" [src]="'data:' + picture.format + ';base64,' + picture.data" width="50" height="50"/>
-      {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
-    </div></li>
+    <li *ngFor="let track of media.tracks">
+      <div (click)="playTrack(track.filename)">
+        <img
+          *ngIf="(track.metadata.common.picture ||[])[0]; let picture"
+          [src]="'data:' + picture.format + ';base64,' + picture.data"
+          width="50" height="50"
+        />
+        {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
+      </div>
+    </li>
   </ul>`,
 })
 export class StreamPageComponent implements OnInit, OnDestroy {

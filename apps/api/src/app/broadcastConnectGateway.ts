@@ -1,9 +1,8 @@
 import { Logger } from '@nestjs/common';
 import {
-  ConnectedSocket, MessageBody,
+  ConnectedSocket,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer

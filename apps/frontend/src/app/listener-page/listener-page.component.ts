@@ -5,8 +5,9 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 @Component({
   selector: 'dnd-audio-listener-page',
   template: `<dnd-audio-visualizer *ngIf="analyserNode" [analyserNode]="analyserNode"></dnd-audio-visualizer><br>
-  <button>I am playing, promise</button><br>
-  <input #volumeElt type="range" min="0" max="200" value="100" step="1" (input)="setVolume(volumeElt.value)"> {{ volume }}`,
+  <input #volumeElt type="range" min="0" max="200" [value]="volume" step="1" (input)="setVolume(volumeElt.value)"> {{ volume }}
+  <button (click)="toggleMute()">{{ volume > 0 ? 'Mute' : 'Unmute' }}</button>
+  `,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
 
@@ -16,6 +17,7 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
   public analyserNode: AnalyserNode;
 
   public volume = 100;
+  private volumeBeforeMuting = 0;
 
   private gainNode: GainNode;
 
@@ -31,7 +33,7 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
 
     this.analyserNode = audio.createAnalyser();
     this.gainNode = audio.createGain();
-    this.setVolume(100);
+    this.setVolume(0); // Start muted to ensure user has to click "unmute" which allows playing stream media
 
     this.analyserNode.connect(this.gainNode).connect(audio.destination);
 
@@ -52,6 +54,16 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
 
   public ngOnDestroy(): void {
     this.peer.destroy();
+  }
+
+  public toggleMute(): void {
+    if (this.volume === 0) {
+      const newVolume = this.volumeBeforeMuting <= 0 ? 100 : this.volumeBeforeMuting;
+      this.setVolume(newVolume);
+    } else {
+      this.volumeBeforeMuting = this.volume;
+      this.setVolume(0);
+    }
   }
 
   public setVolume(volume: number | string): void {
