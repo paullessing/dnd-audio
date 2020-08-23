@@ -8,6 +8,7 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 @Component({
   selector: 'dnd-audio-stream-page',
   template: `Listeners: {{ this.peer ? this.peer.listenerCount : 0 }}<br>
+  <dnd-audio-volume-control [gain]="gainNode" volume="100"></dnd-audio-volume-control><br>
   <button (click)="togglePlay()">{{ isPlaying ? 'Pause' : 'Play' }}</button>
   <ul *ngIf="(media$ | async) as media">
     <li *ngFor="let track of media.tracks">
@@ -35,6 +36,8 @@ export class StreamPageComponent implements OnInit, OnDestroy {
   public isPlaying = false;
 
   public peer: RtcBroadcasterPeer;
+  public gainNode: GainNode;
+
   private audio: HTMLAudioElement;
   private track: MediaElementAudioSourceNode;
   private stream: MediaStream;
@@ -103,7 +106,9 @@ export class StreamPageComponent implements OnInit, OnDestroy {
     const track = this.context.createMediaElementSource(this.audio);
     this.destination = this.context.createMediaStreamDestination();
 
-    track.connect(this.destination);
+    this.gainNode = this.context.createGain();
+
+    track.connect(this.gainNode).connect(this.destination);
 
     this.peer = this.rtcPeerFactory.createBroadcaster();
     this.peer.init(this.destination.stream);
