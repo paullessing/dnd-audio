@@ -5,8 +5,7 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 @Component({
   selector: 'dnd-audio-listener-page',
   template: `<dnd-audio-visualizer *ngIf="analyserNode" [analyserNode]="analyserNode"></dnd-audio-visualizer><br>
-  <input #volumeElt type="range" min="0" max="200" [value]="volume" step="1" (input)="setVolume(volumeElt.value)"> {{ volume }}
-  <button (click)="toggleMute()">{{ volume > 0 ? 'Mute' : 'Unmute' }}</button>
+  <dnd-audio-volume-control [gain]="gainNode" volume="0"></dnd-audio-volume-control>
   `,
 })
 export class ListenerPageComponent implements OnInit, OnDestroy {
@@ -15,11 +14,7 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
   public canvasRef: ElementRef;
 
   public analyserNode: AnalyserNode;
-
-  public volume = 100;
-  private volumeBeforeMuting = 0;
-
-  private gainNode: GainNode;
+  public gainNode: GainNode;
 
   private peer: RtcListenerPeer;
 
@@ -33,7 +28,6 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
 
     this.analyserNode = audio.createAnalyser();
     this.gainNode = audio.createGain();
-    this.setVolume(0); // Start muted to ensure user has to click "unmute" which allows playing stream media
 
     this.analyserNode.connect(this.gainNode).connect(audio.destination);
 
@@ -54,24 +48,6 @@ export class ListenerPageComponent implements OnInit, OnDestroy {
 
   public ngOnDestroy(): void {
     this.peer.destroy();
-  }
-
-  public toggleMute(): void {
-    if (this.volume === 0) {
-      const newVolume = this.volumeBeforeMuting <= 0 ? 100 : this.volumeBeforeMuting;
-      this.setVolume(newVolume);
-    } else {
-      this.volumeBeforeMuting = this.volume;
-      this.setVolume(0);
-    }
-  }
-
-  public setVolume(volume: number | string): void {
-    this.volume = +volume;
-    const gain = this.volume / 100;
-    // For volume changing, gain can go from 0 (silent) to 1 (normal) or 2 (louder).
-    // If gain is negative, it will invert the frequency values.
-    this.gainNode.gain.value = gain;
   }
 
   /**

@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { ListenerPageComponent } from './listener-page/listener-page.component';
 import { StreamPageComponent } from './stream-page/stream-page.component';
 import { VisualizerComponent } from './visualizer/visualizer.component';
+import { VolumeControlComponent } from './volume-control/volume-control.component';
 
 @NgModule({
   declarations: [
@@ -13,6 +14,7 @@ import { VisualizerComponent } from './visualizer/visualizer.component';
     ListenerPageComponent,
     StreamPageComponent,
     VisualizerComponent,
+    VolumeControlComponent,
   ],
   imports: [
     BrowserModule,
