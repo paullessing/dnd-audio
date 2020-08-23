@@ -20,7 +20,8 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
         {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
       </div>
     </li>
-  </ul>`,
+  </ul>
+  <button (click)="shareLocalAudio()">Share local audio</button>`,
 })
 export class StreamPageComponent implements OnInit, OnDestroy {
 
@@ -38,6 +39,7 @@ export class StreamPageComponent implements OnInit, OnDestroy {
   private track: MediaElementAudioSourceNode;
   private stream: MediaStream;
   private context: AudioContext;
+  private destination: MediaStreamAudioDestinationNode;
 
   constructor(
     private rtcPeerFactory: RtcPeerFactory,
@@ -50,28 +52,6 @@ export class StreamPageComponent implements OnInit, OnDestroy {
     this.media$ = this.http.get<MediaCollection>('/api/media/list');
 
     this.setupAudio();
-  }
-
-  private setupAudio(): void {
-    if (this.context) {
-      return;
-    }
-
-    this.context = new AudioContext();
-
-    this.audio = new Audio();
-    // // this.audio.muted = true;
-    const track = this.context.createMediaElementSource(this.audio);
-    const streamDest = this.context.createMediaStreamDestination();
-
-    track.connect(streamDest);
-
-    this.peer = this.rtcPeerFactory.createBroadcaster();
-    this.peer.init(streamDest.stream);
-
-    // const a = new Audio();
-    // a.srcObject = streamDest.stream;
-    // a.play();
   }
 
   public ngOnDestroy(): void {
@@ -102,5 +82,30 @@ export class StreamPageComponent implements OnInit, OnDestroy {
       this.audio.pause();
     }
     this.isPlaying = play;
+  }
+
+  public async shareLocalAudio(): Promise<void> {
+    const audio: MediaStream = await (navigator.mediaDevices as any).getDisplayMedia({ audio : true, video: true });
+
+    const audioStream = new MediaStream(audio.getAudioTracks());
+
+    this.context.createMediaStreamSource(audioStream).connect(this.destination);
+  }
+
+  private setupAudio(): void {
+    if (this.context) {
+      return;
+    }
+
+    this.context = new AudioContext();
+
+    this.audio = new Audio();
+    const track = this.context.createMediaElementSource(this.audio);
+    this.destination = this.context.createMediaStreamDestination();
+
+    track.connect(this.destination);
+
+    this.peer = this.rtcPeerFactory.createBroadcaster();
+    this.peer.init(this.destination.stream);
   }
 }

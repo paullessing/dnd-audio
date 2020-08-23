@@ -112,10 +112,6 @@ export class RtcBroadcasterPeer {
     const peerConnection = this.peerConnections.get(listenerId);
     peerConnection.setRemoteDescription(description);
     console.info('Initialised peer connection', listenerId);
-
-    this.zone.run(() => {
-      this.listenersSubject.next(this.peerConnections.size);
-    });
   }
 
   private removeDisconnectedPeer(peerId: string): void {
