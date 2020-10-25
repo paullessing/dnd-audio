@@ -5,7 +5,9 @@ WORKDIR /usr/src/app
 
 COPY package.json yarn.lock decorate-angular-cli.js ./
 
-RUN yarn install --frozen-lockfile
+# Installing on digitalocean often hits the default 5s timeout
+# see https://github.com/DSpace/dspace-angular/issues/604 and https://github.com/DSpace/dspace-angular/pull/605
+RUN yarn install --frozen-lockfile --network-timeout 300000
 
 COPY . .
 
