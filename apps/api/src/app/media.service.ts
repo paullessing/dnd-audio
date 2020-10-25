@@ -1,4 +1,4 @@
-import { MediaCollection, Track } from '@dnd-audio/api-interfaces';
+import { MediaCollection, Replace, SanitizedMetadata, Track } from '@dnd-audio/api-interfaces';
 import { Injectable, Logger } from '@nestjs/common';
 import { createReadStream, ReadStream } from 'fs';
 import fs from 'fs-extra';

@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { RtcListenerPeer } from '../rtc-listener-peer';
 import { RtcPeerFactory } from '../rtc-peer-factory.service';
 
