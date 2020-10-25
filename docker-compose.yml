@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  web:
+    build:
+      context: '.'
+    command: "yarn serve:prod"
+    expose:
+      - "4200"
+    ports:
+#      - "4200:4200"
+      - "3333:9876"
+    restart: unless-stopped
+#    volumes:
+    environment:
+      - VIRTUAL_HOST=dnd-audio.lessi.ng
+      - VIRTUAL_PORT=4200
+#      - LETSENCRYPT_HOST=images.putit.at
+#      - LETSENCRYPT_EMAIL=lessing.paul@gmail.com
