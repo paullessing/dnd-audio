@@ -9,16 +9,14 @@ COPY package.json yarn.lock decorate-angular-cli.js ./
 # see https://github.com/DSpace/dspace-angular/issues/604 and https://github.com/DSpace/dspace-angular/pull/605
 RUN yarn install --frozen-lockfile --network-timeout 300000
 COPY . .
-RUN yarn build api
+RUN yarn build frontend --prod
 
-FROM node:14-alpine AS server
+FROM nginx:stable-alpine AS server
 
-EXPOSE 3333 3334
+EXPOSE 80
 
-WORKDIR /usr/src/app
-RUN mkdir -p /home/db
+COPY ./docker/nginx.conf /etc/nginx/nginx.conf
 
-COPY --from=builder /usr/src/app/dist/apps/api .
-RUN yarn install --frozen-lockfile --network-timeout 300000
+COPY --from=builder /usr/src/app/dist/apps/frontend /usr/share/nginx/html
 
-CMD ["node", "main.js"]
+CMD ["nginx", "-g", "daemon off;"]
