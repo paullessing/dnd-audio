@@ -7,9 +7,9 @@ echo "$TOKEN" | docker login -u paullessing --password-stdin docker.pkg.github.c
 
 # Build API
 docker build -t docker.pkg.github.com/paullessing/dnd-audio/api:<VERSION> -f apps/api/Dockerfile .
-docker push  docker.pkg.github.com/paullessing/dnd-audio/api:<VERSION>
+docker push docker.pkg.github.com/paullessing/dnd-audio/api:<VERSION>
 
 # Build Frontend
 docker build -t docker.pkg.github.com/paullessing/dnd-audio/frontend:<VERSION> -f apps/frontend/Dockerfile .
-docker push  docker.pkg.github.com/paullessing/dnd-audio/frontend:<VERSION>
+docker push docker.pkg.github.com/paullessing/dnd-audio/frontend:<VERSION>
 ```

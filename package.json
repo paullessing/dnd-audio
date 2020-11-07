@@ -29,7 +29,9 @@
     "workspace-schematic": "nx workspace-schematic",
     "dep-graph": "nx dep-graph",
     "help": "nx help",
-    "docker:build:api": "docker build -t paullessing/dnd-audio-api -f apps/api/Dockerfile ."
+    "docker:build:all": "yarn docker:build:frontend && yarn docker:build:api",
+    "docker:build:frontend": "docker build -t docker.pkg.github.com/paullessing/dnd-audio/frontend:test -f apps/frontend/Dockerfile .",
+    "docker:build:api": "docker build -t docker.pkg.github.com/paullessing/dnd-audio/api:test -f apps/api/Dockerfile ."
   },
   "private": true,
   "dependencies": {

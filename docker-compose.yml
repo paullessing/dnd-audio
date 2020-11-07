@@ -2,7 +2,7 @@ version: "3"
 
 services:
   frontend:
-    image: docker.pkg.github.com/paullessing/dnd-audio/frontend:0.0.1
+    image: docker.pkg.github.com/paullessing/dnd-audio/frontend:test
     expose:
       - "80"
     ports:
@@ -22,11 +22,11 @@ services:
       webnet:
 
   api:
-    image: docker.pkg.github.com/paullessing/dnd-audio/api:0.0.1
+    image: docker.pkg.github.com/paullessing/dnd-audio/api:test
     expose:
       - "3333"
-    ports:
-      - "9876:3333"
+#    ports:
+#      - "3333:3333"
     restart: unless-stopped
     networks:
       webnet:
