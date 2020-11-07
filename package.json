@@ -8,7 +8,7 @@
     "nx": "nx",
     "serve": "concurrently \"yarn start frontend --host=0.0.0.0\" \"yarn start api\" -n frontend,api -c green,blue",
     "//": "next line is temporary to allow deploying to prod while I sort out nginx etc",
-    "serve:prod": "concurrently \"yarn start frontend --configuration=production --host=0.0.0.0\" \"yarn start api\" -n frontend,api -c green,blue",
+    "serve:prod": "concurrently \"yarn start frontend --configuration=production --host=0.0.0.0 --disable-host-check\" \"yarn start api\" -n frontend,api -c green,blue",
     "start": "ng serve",
     "build": "ng build",
     "test": "ng test",
