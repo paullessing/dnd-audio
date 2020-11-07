@@ -4,17 +4,17 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const packageJson = require('../../package.json');
 
 const basePackage = {
-  "name": "@dnd-audio/api",
-  "version": packageJson.version,
-  "main": "./main.js",
-  "license": packageJson.license,
-  "dependencies": {
+  name: '@dnd-audio/api',
+  version: packageJson.version,
+  main: './main.js',
+  license: packageJson.license,
+  dependencies: {
     // Dependencies that the GeneratePackageJsonPlugin doesn't auto-detect have to be added manually here
-    "reflect-metadata": "",
-    "rxjs": "",
-    "@nestjs/platform-express": "",
-    "@nestjs/platform-socket.io": "",
-  },
+    'reflect-metadata': '',
+    'rxjs': '',
+    '@nestjs/platform-express': '',
+    '@nestjs/platform-socket.io': '',
+  }
 };
 
 module.exports = (config, context) => {
@@ -26,7 +26,9 @@ module.exports = (config, context) => {
         // Using the declared versions rather than installed ensures that yarn.lock will match,
         // otherwise you get mismatches caused by a too specific version in package.json
         // that's not found in the lockfile
-        useInstalledVersions: false
+        useInstalledVersions: false,
+        // debug: true,
+        sourcePackageFilenames: ['package.json'],
       }),
       new CopyWebpackPlugin({
         patterns: [{
