@@ -16,8 +16,8 @@ services:
       - VIRTUAL_HOST=dnd-audio.lessi.ng
       - VIRTUAL_PORT=4200
       - VIRTUAL_NETWORK=webnet
-#      - LETSENCRYPT_HOST=images.putit.at
-#      - LETSENCRYPT_EMAIL=lessing.paul@gmail.com
+      - LETSENCRYPT_HOST=dnd-audio.lessi.ng
+      - LETSENCRYPT_EMAIL=lessing.paul@gmail.com
     networks:
       webnet:
 
