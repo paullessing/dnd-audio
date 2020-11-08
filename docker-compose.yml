@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  frontend:
+    image: docker.pkg.github.com/paullessing/dnd-audio/frontend:latest
+    expose:
+      - "80"
+#    ports:
+#      - "8081:80"
+    restart: unless-stopped
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./db:/db
+      - ./media:/media
+    environment:
+      - VIRTUAL_HOST=dnd-audio.lessi.ng
+      - VIRTUAL_PORT=80
+      - VIRTUAL_NETWORK=webnet
+      - LETSENCRYPT_HOST=dnd-audio.lessi.ng
+      - LETSENCRYPT_EMAIL=lessing.paul@gmail.com
+    networks:
+      webnet:
+
+  api:
+    image: docker.pkg.github.com/paullessing/dnd-audio/api:latest
+    expose:
+      - "3333"
+#    ports:
+#      - "3333:3333"
+    restart: unless-stopped
+    networks:
+      webnet:
+
+
+networks:
+  webnet:
+    external: true

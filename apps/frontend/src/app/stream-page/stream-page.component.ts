@@ -8,25 +8,32 @@ import { RtcPeerFactory } from '../rtc-peer-factory.service';
 @Component({
   selector: 'dnd-audio-stream-page',
   template: `Listeners: {{ this.peer ? this.peer.listenerCount : 0 }}<br>
-  <dnd-audio-volume-control [gain]="gainNode" volume="100"></dnd-audio-volume-control><br>
-  <button (click)="togglePlay()">{{ isPlaying ? 'Pause' : 'Play' }}</button>
-  <ul *ngIf="(media$ | async) as media">
-    <li *ngFor="let track of media.tracks">
-      <div (click)="playTrack(track.filename)">
-        <img
-          *ngIf="(track.metadata.common.picture ||[])[0]; let picture"
-          [src]="'data:' + picture.format + ';base64,' + picture.data"
-          width="50" height="50"
-        />
-        {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
-      </div>
-    </li>
-  </ul>
-  <button (click)="shareLocalAudio()">Share local audio</button>`,
+  <ng-container *ngIf="accepted; else button">
+    <dnd-audio-volume-control [gain]="gainNode" volume="100"></dnd-audio-volume-control><br>
+    <button (click)="togglePlay()">{{ isPlaying ? 'Pause' : 'Play' }}</button>
+    <ul *ngIf="(media$ | async) as media">
+      <li *ngFor="let track of media.tracks">
+        <div (click)="playTrack(track.filename)">
+          <img
+            *ngIf="(track.metadata.common.picture ||[])[0]; let picture"
+            [src]="'data:' + picture.format + ';base64,' + picture.data"
+            width="50" height="50"
+          />
+          {{ track.metadata.common.artist }} - {{ track.metadata.common.title }}
+        </div>
+      </li>
+    </ul>
+    <button (click)="shareLocalAudio()">Share local audio</button>
+  </ng-container>
+  <ng-template #button>
+    <button (click)="accept()">Start</button>
+  </ng-template>
+  `,
 })
 export class StreamPageComponent implements OnInit, OnDestroy {
 
   public status: string;
+  public accepted: boolean;
 
   @ViewChild('video')
   public videoEl: ElementRef<HTMLVideoElement>;
@@ -53,14 +60,17 @@ export class StreamPageComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     this.media$ = this.http.get<MediaCollection>('/api/media/list');
-
-    this.setupAudio();
   }
 
   public ngOnDestroy(): void {
     if (this.peer) {
       this.peer.destroy();
     }
+  }
+
+  public accept(): void {
+    this.setupAudio();
+    this.accepted = true;
   }
 
   public playTrack(track: string): void {
