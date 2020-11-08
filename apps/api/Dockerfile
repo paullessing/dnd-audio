@@ -16,7 +16,7 @@ FROM node:14-alpine AS server
 EXPOSE 3333 3334
 
 WORKDIR /usr/src/app
-RUN mkdir -p /home/db
+RUN mkdir -p /db /media
 
 COPY --from=builder /usr/src/app/dist/apps/api .
 RUN yarn install --frozen-lockfile --network-timeout 300000
